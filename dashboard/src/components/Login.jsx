@@ -1,0 +1,151 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Shield, User } from 'lucide-react';
+import './Login.css';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const [isLogin, setIsLogin] = useState(true);
+  const [role, setRole] = useState('user'); // 'user' or 'admin'
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+
+  const handleRoleSelect = (selectedRole) => setRole(selectedRole);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (isLogin) {
+      // Mock Login
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.email === formData.email && u.password === formData.password && u.role === role);
+      
+      if (user) {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        // Admin and User both redirect to store now, as Admin has the sidebar
+        navigate('/');
+      } else {
+        setError('Invalid credentials or incorrect role selected.');
+      }
+    } else {
+      // Mock Signup
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      if (users.find(u => u.email === formData.email)) {
+        setError('Account already exists with this email.');
+        return;
+      }
+      
+      const newUser = { ...formData, role };
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // Auto login after signup
+      localStorage.setItem('currentUser', JSON.stringify(newUser));
+      
+      // Both admin and user go to Storefront since Admin has the global sidebar panel
+      navigate('/');
+    }
+  };
+
+  return (
+    <div className="login-root">
+      <div className="login-container animate-fade-in">
+        <div className="login-header">
+          <Zap color="#00F0FF" size={32} />
+          <h2>{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+          <p>Access the TechnoGear Network.</p>
+        </div>
+
+        {error && <div className="login-error">{error}</div>}
+
+        <div className="role-selector">
+          <button 
+            type="button"
+            className={`role-btn ${role === 'user' ? 'active user-btn' : ''}`}
+            onClick={() => handleRoleSelect('user')}
+          >
+            <User size={18} /> User
+          </button>
+          <button 
+            type="button"
+            className={`role-btn ${role === 'admin' ? 'active admin-btn' : ''}`}
+            onClick={() => handleRoleSelect('admin')}
+          >
+            <Shield size={18} /> Admin
+          </button>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          {!isLogin && (
+            <div className="form-group">
+              <label>Full Name</label>
+              <input 
+                type="text" 
+                placeholder="John Doe" 
+                required 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+          )}
+          
+          <div className="form-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              placeholder="user@technogear.com" 
+              required 
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              placeholder="••••••••" 
+              required 
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+            />
+          </div>
+
+          <button type="submit" className="login-submit">
+            {isLogin ? 'Sign In' : 'Sign Up'}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <p>
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <span className="toggle-mode" onClick={() => setIsLogin(!isLogin)}>
+              {isLogin ? 'Sign Up' : 'Sign In'}
+            </span>
+          </p>
+        </div>
+        
+        {/* Temporary shortcut helper for reviewers */}
+        <div style={{marginTop: '2rem', fontSize: '0.75rem', color: '#4A5568', textAlign: 'center'}}>
+          <p>Demo accounts (auto-configured):<br/>admin@technogear.com (Admin) | demo@technogear.com (User)</p>
+          <button 
+            type="button" 
+            onClick={() => {
+               localStorage.setItem('users', JSON.stringify([
+                 {email: 'admin@technogear.com', password: 'password', role: 'admin', name: 'Admin'},
+                 {email: 'demo@technogear.com', password: 'password', role: 'user', name: 'Demo User'}
+               ]));
+               alert("Demo accounts injected into localStorage!");
+            }}
+            style={{background:'none', border:'1px solid #4A5568', color:'#4A5568', fontSize:'0.7rem', marginTop:'0.5rem', cursor: 'pointer', borderRadius: '4px', padding:'2px 5px'}}
+          >
+             Inject Demo Data
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
